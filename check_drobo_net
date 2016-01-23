@@ -1,7 +1,8 @@
+#!/usr/bin/env python2.7
 import click
 import struct
 
-from lxml import etree
+import xml.etree.ElementTree as ET
 
 from socket import (
     socket as Socket,
@@ -38,7 +39,7 @@ def get_status(host):
     status_message = struct.unpack('{0}sx'.format(status_packet_length-1), status_message)
     status_message = status_message[0].strip()
 
-    doc = etree.XML(status_message)
+    doc = ET.fromstring(status_message)
     return doc
 
 
@@ -55,26 +56,26 @@ TEXT_STATUSES = {
 
 class DroboChecker:
     def __init__(self, host):
-        self.status = get_status(host)
+        self.update_node = get_status(host)
 
     def _get_threshold(self):
-        def get_int(xpath):
-            return int(self.status.xpath(xpath)[0].text)
+        def get_int(element_name):
+            return float(self.update_node.find(element_name).text)
 
-        total_capacity = get_int('/ESATMUpdate/mTotalCapacityProtected')
-        used_capacity = get_int('/ESATMUpdate/mUsedCapacityProtected')
+        total_capacity = get_int('mTotalCapacityProtected')
+        used_capacity = get_int('mUsedCapacityProtected')
 
-        warning = get_int('/ESATMUpdate/mYellowThreshold') / 100
-        critical = get_int('/ESATMUpdate/mRedThreshold') / 100
+        warning = get_int('mYellowThreshold') / 100.0
+        critical = get_int('mRedThreshold') / 100.0
 
-        return (used_capacity/total_capacity)*100, critical, warning
+        return (used_capacity / total_capacity) * 100.0, critical, warning
 
     def _get_failed_drives(self):
-        slots_node = self.status.xpath('/ESATMUpdate/mSlotsExp')[0]
-        for child_node in slots_node:
-            if child_node.xpath('mStatus')[0].text != '3':
-                slot_id = child_node.xpath('mSlotNumber')[0].text
-                yield  slot_id + 1
+        slots_node = self.update_node.find('mSlotsExp')
+        for child_node in slots_node.getchildren():
+            if child_node.find('mStatus').text != '3':
+                slot_id = child_node.find('mSlotNumber').text
+                yield slot_id + 1
 
     def check_capacity(self):
         pct_used, critical, warning = self._get_threshold()

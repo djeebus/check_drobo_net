@@ -1,6 +1,6 @@
-#!/usr/bin/env python2.7
-import click
+#!/usr/bin/env python
 import struct
+import sys
 
 import xml.etree.ElementTree as ET
 
@@ -108,8 +108,6 @@ class DroboChecker:
         exit(result)
 
 
-@click.command()
-@click.argument('host')
 def main(host):
     checker = DroboChecker(host)
 
@@ -117,4 +115,4 @@ def main(host):
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1])

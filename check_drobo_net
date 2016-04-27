@@ -75,7 +75,7 @@ class DroboChecker:
         for child_node in slots_node.getchildren():
             if child_node.find('mStatus').text != '3':
                 slot_id = child_node.find('mSlotNumber').text
-                yield slot_id + 1
+                yield int(slot_id) + 1
 
     def check_capacity(self):
         pct_used, critical, warning = self._get_threshold()
